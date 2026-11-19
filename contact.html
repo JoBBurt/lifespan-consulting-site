@@ -124,7 +124,19 @@
     fetch(form.action,{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify(data)})
       .then(function(r){return r.json();})
       .then(function(j){ if(j&&j.success){ form.style.display='none'; done.style.display='block'; } else { throw new Error(j&&j.message); } })
-      .catch(function(){ fail.style.display='block'; btn.value=label; btn.disabled=false; });
+      .catch(function(){ nativeSubmit(); });
   });
+  function nativeSubmit(){
+    // Fallback: plain HTML POST (no CORS); Web3Forms redirects back to the thank-you URL.
+    Array.prototype.forEach.call(form.querySelectorAll('select[multiple]'),function(sel){
+      var h=document.createElement('input'); h.type='hidden'; h.name=sel.name;
+      h.value=Array.prototype.filter.call(sel.options,function(o){return o.selected;}).map(function(o){return o.value;}).join(', ');
+      sel.removeAttribute('name'); form.appendChild(h);
+    });
+    var r=document.createElement('input'); r.type='hidden'; r.name='redirect';
+    r.value=location.origin+location.pathname+'?sent=1'; form.appendChild(r);
+    HTMLFormElement.prototype.submit.call(form);
+  }
+  if(/[?&]sent=1/.test(location.search)){ form.style.display='none'; done.style.display='block'; }
 })();
 </script></body></html>
